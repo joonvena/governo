@@ -1,0 +1,30 @@
+rules:
+  - name: "Bucket created in europe-west1"
+    service: "storage.googleapis.com"
+    methods: ["storage.buckets.create"]
+    condition: "protoPayload.resourceLocation.currentLocations.exists(loc, loc in ['europe-west1'])"
+    actions:
+      - type: "log"
+        params:
+          message: "Bucket created in location {{ protoPayload.resourceLocation.currentLocations }}"
+
+  - name: "Bucket not in europe-north1"
+    asset_type: ["storage.googleapis.com/Bucket"]
+    condition: "asset.resource.location != 'us-east1'"
+    actions:
+      - type: "log"
+        params:
+          message: "Bucket was created in region {{ asset.resource.location }}"
+      - type: "webhook"
+        params:
+          url: "https://example.com"
+          method: "POST"
+          body: '{"message": "Bucket was created in region {{ asset.resource.location }}"}'
+
+  - name: "Global Pub/Sub topic"
+    asset_type: ["pubsub.googleapis.com/Topic"]
+    condition: "asset.resource.location == 'global'"
+    actions:
+      - type: "log"
+        params:
+          message: "Pub/Sub topic was created using {{ asset.resource.location }} region which is not permitted!"
